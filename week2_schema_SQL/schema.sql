@@ -20,21 +20,41 @@ CREATE TABLE Kerajaan
   PRIMARY KEY (Kerajaan_ID)
 );
 
-CREATE TABLE Situs_Arkeologi
-(
+CREATE TABLE Situs_Arkeologi (
   Situs_ID INT NOT NULL AUTO_INCREMENT,
   Nama_Situs VARCHAR(255) NOT NULL,
   Jalan_Dusun VARCHAR(255) NOT NULL,
-  Kecamatan VARCHAR(255) NOT NULL,
-  Desa_Kelurahan VARCHAR(255) NOT NULL,
-  Kota_Kabupaten VARCHAR(255) NOT NULL,
+  Desa_Kelurahan_ID INT NOT NULL,
   Latitude DECIMAL(9,6) NOT NULL,
   Longitude DECIMAL(9,6) NOT NULL,
   Periode_Sejarah VARCHAR(255),
   Jenis_Situs VARCHAR(255) NOT NULL,
   Kerajaan_ID INT,
   PRIMARY KEY (Situs_ID),
-  FOREIGN KEY (Kerajaan_ID) REFERENCES Kerajaan(Kerajaan_ID)
+  FOREIGN KEY (Kerajaan_ID) REFERENCES Kerajaan(Kerajaan_ID),
+  FOREIGN KEY (Desa_Kelurahan_ID) REFERENCES Desa_Kelurahan(Desa_Kelurahan_ID)
+);
+
+CREATE TABLE Kota_Kabupaten 
+(
+    Kota_Kabupaten_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Nama_Kota_Kabupaten VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE Kecamatan 
+(
+    Kecamatan_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Nama_Kecamatan VARCHAR(255) NOT NULL,
+    Kota_Kabupaten_ID INT NOT NULL,
+    FOREIGN KEY (Kota_Kabupaten_ID) REFERENCES Kota_Kabupaten(Kota_Kabupaten_ID)
+);
+
+CREATE TABLE Desa_Kelurahan 
+(
+    Desa_Kelurahan_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Nama_Desa_Kelurahan VARCHAR(255) NOT NULL,
+    Kecamatan_ID INT NOT NULL,
+    FOREIGN KEY (Kecamatan_ID) REFERENCES Kecamatan(Kecamatan_ID)
 );
 
 CREATE TABLE Tokoh
