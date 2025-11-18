@@ -6,7 +6,7 @@ It is built using Node.js (Express) and PostgreSQL, with a secure authentication
 This API is intended to be used by a separate frontend application (e.g., Leaflet.js, React, or Vue).
 
 
-## ✨ Key Features
+## Key Features
 
 - **JWT Authentication:** Secure `register` and `login` endpoints using JSON Web Tokens.
 - **3-Tier Role System (RBAC):**
@@ -22,7 +22,7 @@ This API is intended to be used by a separate frontend application (e.g., Leafle
   - Connection pooling using `pg`
 
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Node.js**
 - **Express.js**
@@ -34,7 +34,7 @@ This API is intended to be used by a separate frontend application (e.g., Leafle
 - **pg (node-postgres)**
 
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Prerequisites
 
@@ -107,7 +107,7 @@ http://localhost:3000
 ```
 
 
-# 📖 API Documentation (CRUD & Workflow Demo)
+# API Documentation (CRUD & Workflow Demo)
 
 All endpoints are under `/api`.  
 Protected routes require:
@@ -303,7 +303,7 @@ Unlinks them.
 ```
 
 
-# 📁 Project Structure
+# Project Structure
 
 ```
 proyek_arkeologi_backend/
