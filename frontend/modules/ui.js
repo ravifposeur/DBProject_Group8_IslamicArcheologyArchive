@@ -18,9 +18,14 @@ export function renderSiteCards(sites, containerId) {
             <p class="desc">${s.nama_kerajaan ? '<strong>Kerajaan</strong>: ' + s.nama_kerajaan : 'Kerajaan Tidak Diketahui'}</p>
             <div class="card-actions">
                 <button class="btn-map" onclick="window.viewOnMap(${s.latitude}, ${s.longitude})">Peta</button>
-                <button class="btn-detail" onclick="window.toggleArtefacts(${s.situs_id})">Objek/Artefak</button>
+                
+                <button class="btn-detail" onclick="window.loadSiteDetails(${s.situs_id})">Objek/Artefak</button>
             </div>
-            <div id="artefacts-${s.situs_id}" class="artefact-list" style="display:none;">Memuat...</div>
+
+            <div id="details-${s.situs_id}" style="display:none; margin-top:10px; border-top:1px dashed #ccc; padding-top:10px;">
+                <div id="researchers-${s.situs_id}" class="researcher-list"></div>
+                <div id="artefacts-${s.situs_id}" class="artefact-list"></div>
+            </div>
         `;
         container.appendChild(card);
     });
@@ -35,12 +40,20 @@ export function renderArtefacts(artefacts, containerId) {
         return;
     }
 
-    container.innerHTML = artefacts.map(a => `
+    container.innerHTML = artefacts.map(a => {
+        let ownerHtml = '';
+        if (a.owners && a.owners.length > 0) {
+            const names = a.owners.map(o => `<a href="tokoh.html">${o.nama_tokoh}</a>`).join(', ');
+            ownerHtml = `<div style="font-size:0.85em; color:#555; margin-top:2px;">Atribusi: ${names}</div>`;
+        }
+
+        return `
         <div class="artefact-item">
             <strong>${a.nama_objek}</strong> (${a.jenis_objek})<br>
             <small>Bahan: ${a.bahan}</small>
-        </div>
-    `).join('');
+            ${ownerHtml} </div>
+        `;
+    }).join('');
 }
 
 export function populateSelect(elementId, data, valueKey, textKey) {

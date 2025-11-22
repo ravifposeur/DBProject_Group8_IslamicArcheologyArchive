@@ -5,11 +5,14 @@
     <nav><a href="tokoh.html">Kembali</a></nav>
     <main class="form-container">
         <h2>Tambah Tokoh</h2>
-        <form id="form">
-            <input type="text" id="nama" required placeholder="Nama Tokoh">
-            <select id="kerajaan"><option>Memuat...</option></select>
-            <div class="row"><input type="number" id="lahir" placeholder="Tahun Lahir"><input type="number" id="wafat" placeholder="Tahun Wafat"></div>
-            <input type="text" id="bio" required placeholder="Biografi">
+        <form id="form-tokoh">
+            <input type="text" id="nama_tokoh" required placeholder="Nama Tokoh">
+            <select id="kerajaan_id"><option value="">Memuat...</option></select>
+            <div class="row">
+                <input type="number" id="tahun_lahir" placeholder="Tahun Lahir">
+                <input type="number" id="tahun_wafat" placeholder="Tahun Wafat">
+            </div>
+            <input type="text" id="biografi_singkat" required placeholder="Biografi">
             <button type="submit">Simpan</button>
         </form>
     </main>

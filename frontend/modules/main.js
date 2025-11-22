@@ -5,37 +5,45 @@ import { isLoggedIn, logout, saveToken, getUserRole } from './auth.js';
 
 window.viewOnMap = (lat, long) => flyTo(lat, long);
 
-window.toggleArtefacts = async (situsId) => {
-    const container = document.getElementById(`artefacts-${situsId}`);
-    if (container.style.display === 'none') {
-        container.style.display = 'block';
-        try {
-            const data = await endpoints.getSiteArtefacts(situsId);
-            renderArtefacts(data, `artefacts-${situsId}`);
-        } catch (e) { container.innerHTML = '<small>Error memuat data</small>'; }
-    } else { container.style.display = 'none'; }
-};
-
 window.loadSiteDetails = async (situsId) => {
-    const container = document.getElementById(`details-${situsId}`);
+    const container = document.getElementById(`details-${situsId}`); 
     const resContainer = document.getElementById(`researchers-${situsId}`);
     const artContainer = document.getElementById(`artefacts-${situsId}`);
 
-    if (container.style.display === 'block') { container.style.display = 'none'; return; }
+    if (container.style.display === 'block') { 
+        container.style.display = 'none'; 
+        return; 
+    }
     container.style.display = 'block';
     
-    resContainer.innerHTML = '<small>Memuat peneliti...</small>';
+    resContainer.innerHTML = '<small>Memuat data peneliti...</small>';
     artContainer.innerHTML = '<small>Memuat artefak...</small>';
 
     try {
         const researchers = await endpoints.getResearchersBySite(situsId);
         resContainer.innerHTML = researchers.length ? 
-            '<strong>🕵️ Tim Peneliti:</strong><ul style="margin:5px 0; padding-left:20px;">' + researchers.map(r => `<li>${r.nama_lengkap}</li>`).join('') + '</ul>' 
-            : '<small>Belum ada data peneliti.</small>';
+            '<strong>Tim Peneliti:</strong><ul style="margin:5px 0 15px 20px;">' + 
+            researchers.map(r => `<li><a href="arkeolog.html">${r.nama_lengkap}</a></li>`).join('') + 
+            '</ul>' 
+            : '<small style="display:block; margin-bottom:10px;">Belum ada data peneliti.</small>';
 
-        const artefacts = await endpoints.getSiteArtefacts(situsId);
-        renderArtefacts(artefacts, `artefacts-${situsId}`);
-    } catch (e) { resContainer.innerHTML = 'Error.'; }
+        const rawArtefacts = await endpoints.getSiteArtefacts(situsId);
+
+        const artefactsWithOwners = await Promise.all(rawArtefacts.map(async (item) => {
+            try {
+                const owners = await endpoints.getOwnersByObject(item.objek_id);
+                return { ...item, owners: owners };
+            } catch (err) {
+                return { ...item, owners: [] };
+            }
+        }));
+
+        renderArtefacts(artefactsWithOwners, `artefacts-${situsId}`);
+
+    } catch (e) { 
+        console.error(e);
+        resContainer.innerHTML = '<small style="color:red">Gagal memuat data.</small>'; 
+    }
 };
 
 window.delItem = async (type, id) => {
@@ -106,8 +114,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <span class="badge">${t.nama_kerajaan || 'Kerajaan ?'}</span>
                         <p>${t.biografi_singkat}</p>
                         ${userIn ? `<div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;">
-                            <a href="manage-gelar.html?id=${t.tokoh_id}" style="font-size:0.8rem;">🎖️ Gelar</a> | 
-                            <a href="link-atribusi.html" style="font-size:0.8rem;">🔗 Atribusi</a>
+                            <a href="manage-gelar.html?id=${t.tokoh_id}" style="font-size:0.8rem;">Gelar</a> | 
+                            <a href="link-atribusi.html" style="font-size:0.8rem;">Atribusi</a>
                         </div>` : ''}
                     </div>`).join('');
             };
@@ -133,7 +141,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         </div>
                         <p><strong>Institusi:</strong> ${a.afiliasi_institusi}</p>
                         <p>📧 ${a.email}</p>
-                        ${userIn ? `<div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;"><a href="link-penelitian.html" style="font-size:0.8rem;">🔗 Catat Penelitian</a></div>` : ''}
+                        ${userIn ? `<div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;"><a href="link-penelitian.html" style="font-size:0.8rem;">Catat Penelitian</a></div>` : ''}
                     </div>`).join('');
             };
             render(list);
@@ -252,19 +260,37 @@ document.addEventListener('DOMContentLoaded', async () => {
         const form = document.getElementById(formId);
         if(form) {
             if (!isLoggedIn()) window.location.href = 'login.html';
+            
             if(formId === 'form-tokoh') {
                 endpoints.getKingdoms().then(d => populateSelect('kerajaan_id', d, 'kerajaan_id', 'nama_kerajaan'));
             }
+
             form.addEventListener('submit', async(e) => {
                 e.preventDefault();
+                
+                const btn = form.querySelector('button[type="submit"]');
+                if(btn) {
+                    btn.disabled = true;
+                    btn.innerText = "Menyimpan...";
+                }
+
                 const data = {};
                 Array.from(form.elements).forEach(el => {
                     if(el.id) data[el.id] = (el.type === 'number' && el.value) ? parseInt(el.value) : el.value;
                 });
                 if(data.kerajaan_id === "") data.kerajaan_id = null;
                 
-                try { await apiCall(data); alert("Sukses!"); window.location.href=redirect; }
-                catch(err) { alert(err.message); }
+                try { 
+                    await apiCall(data); 
+                    alert("Sukses!"); 
+                    window.location.href = redirect; 
+                } catch(err) { 
+                    alert(err.message);
+                    if(btn) {
+                        btn.disabled = false;
+                        btn.innerText = "Simpan";
+                    }
+                }
             });
         }
     };
@@ -373,5 +399,103 @@ document.addEventListener('DOMContentLoaded', async () => {
                 alert("Berhasil! Silakan login."); window.location.href = 'login.html';
             } catch (err) { alert(err.message); }
         });
+    }
+
+    const kotaContainer = document.getElementById('kota');
+    if (kotaContainer) {
+        if (!isLoggedIn()) { window.location.href = 'login.html'; return; }
+
+        let selKota, selKec;
+        const item = (id, name, type, pid) => `
+            <div class="list-item" onclick="window.sel('${type}',${id},'${name}',${pid})">
+                <span>${name}</span>
+                <div>
+                    <button class="btn-xs" style="background:#f39c12; color:white;" onclick="event.stopPropagation();window.ed('${type}',${id},'${name}',${pid})">✏️</button>
+                    <button class="btn-xs" style="background:#c0392b; color:white;" onclick="event.stopPropagation();window.delLoc('${type}',${id})">🗑️</button>
+                </div>
+            </div>
+        `;
+
+        const loadLoc = async () => {
+            try {
+                const d = await endpoints.getCities();
+                kotaContainer.innerHTML = d.map(x => item(x.kota_kabupaten_id, x.nama_kota_kabupaten, 'kota')).join('');
+            } catch(e) { kotaContainer.innerHTML = 'Error.'; }
+        };
+
+        window.sel = async(type, id, name, pid) => {
+            if(type==='kota') {
+                selKota=id; 
+                document.getElementById('kec').innerHTML='Memuat...';
+                document.getElementById('desa').innerHTML='Pilih Kecamatan...';
+                const d = await endpoints.getDistricts(id);
+                document.getElementById('kec').innerHTML = d.map(x => item(x.kecamatan_id, x.nama_kecamatan, 'kec', id)).join('');
+            } else if(type==='kec') {
+                selKec=id; 
+                document.getElementById('desa').innerHTML='Memuat...';
+                const d = await endpoints.getVillages(id);
+                document.getElementById('desa').innerHTML = d.map(x => item(x.desa_kelurahan_id, x.nama_desa_kelurahan, 'desa', id)).join('');
+            }
+        };
+
+        window.ed = async(t, id, old, pid) => {
+            const n = prompt("Nama baru:", old); if(!n) return;
+            try {
+                if(t==='kota') await endpoints.updateCity(id, n);
+                if(t==='kec') await endpoints.updateDistrict(id, n, pid);
+                if(t==='desa') await endpoints.updateVillage(id, n, pid);
+                alert("Update Sukses!");
+                if(t==='kota') loadLoc(); else if(t==='kec') window.sel('kota', pid); else window.sel('kec', pid);
+            } catch(e){alert(e.message);}
+        };
+
+        window.delLoc = async(t, id) => {
+            if(!confirm("Hapus? Data yang termuat dalam lokasi ini akan hilang.")) return;
+            try {
+                if(t==='kota') await endpoints.deleteCity(id);
+                if(t==='kec') await endpoints.deleteDistrict(id);
+                if(t==='desa') await endpoints.deleteVillage(id);
+                alert("Terhapus!");
+                if(t==='kota') loadLoc(); else if(t==='kec') window.sel('kota', selKota); else window.sel('kec', selKec);
+            } catch(e){alert(e.message);}
+        };
+
+        loadLoc();
+    }
+
+    const gelarHeader = document.getElementById('hdr');
+    if (gelarHeader) {
+        const id = new URLSearchParams(window.location.search).get('id');
+        
+        const loadGelar = async () => {
+            try {
+                const t = await endpoints.getTokohById(id);
+                gelarHeader.innerText = `Gelar: ${t.nama_tokoh}`;
+                const g = await endpoints.getTitles(id);
+                document.getElementById('list').innerHTML = g.map(x => `
+                    <div style="padding:10px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;">
+                        ${x.gelar_tokoh}
+                        <button onclick="window.delGelar('${x.gelar_tokoh}')" style="background:red; color:white; padding:2px 5px;">🗑️</button>
+                    </div>`).join('');
+            } catch(e) { console.log(e); }
+        };
+
+        document.getElementById('form').addEventListener('submit', async(e)=>{
+            e.preventDefault();
+            try {
+                await endpoints.addTitle(id, document.getElementById('glr').value);
+                document.getElementById('glr').value=''; 
+                loadGelar();
+            } catch(e) { alert(e.message); }
+        });
+
+        window.delGelar = async(glr) => { 
+            if(confirm("Hapus?")) { 
+                await endpoints.deleteTitle(id, glr); 
+                loadGelar(); 
+            }
+        };
+        
+        loadGelar();
     }
 });
