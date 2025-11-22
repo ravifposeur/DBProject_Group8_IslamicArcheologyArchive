@@ -3,35 +3,23 @@ import { renderPendingSites, renderPendingArtefacts } from './ui.js';
 import { isLoggedIn } from './auth.js';
 
 window.handleSiteAction = async (id, action) => {
-    const actionText = action === 'approve' ? 'menyetujui' : 'menolak';
-    
-    if (!confirm(`Apakah Anda yakin ingin ${actionText} situs ini?`)) return;
-    
+    if (!confirm("Yakin?")) return;
     try {
         if (action === 'approve') await endpoints.approveSite(id);
-        else await endpoints.rejectSite(id);
-        
-        alert(`Situs berhasil di${action === 'approve' ? 'setujui' : 'tolak'}!`);
-        loadDashboardData();
-    } catch (err) {
-        alert(`Error: ${err.message}`);
-    }
+        else if (action === 'reject') await endpoints.rejectSite(id);
+        else if (action === 'delete') await endpoints.deleteSite(id);
+        alert("Sukses!"); loadDashboardData();
+    } catch (err) { alert(err.message); }
 };
 
 window.handleArtefactAction = async (id, action) => {
-    const actionText = action === 'approve' ? 'menyetujui' : 'menolak';
-    
-    if (!confirm(`Apakah Anda yakin ingin ${actionText} objek ini?`)) return;
-
+    if (!confirm("Yakin?")) return;
     try {
         if (action === 'approve') await endpoints.approveArtefact(id);
-        else await endpoints.rejectArtefact(id);
-        
-        alert(`Objek berhasil di${action === 'approve' ? 'setujui' : 'tolak'}!`);
-        loadDashboardData();
-    } catch (err) {
-        alert(`Error: ${err.message}`);
-    }
+        else if (action === 'reject') await endpoints.rejectArtefact(id);
+        else if (action === 'delete') await endpoints.deleteArtefact(id);
+        alert("Sukses!"); loadDashboardData();
+    } catch (err) { alert(err.message); }
 };
 
 async function loadDashboardData() {
