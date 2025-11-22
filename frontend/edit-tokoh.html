@@ -13,33 +13,6 @@
             <button type="submit">Update</button>
         </form>
     </main>
-    <script type="module">
-        import { endpoints } from './modules/api.js'; import { populateSelect } from './modules/ui.js';
-        const id = new URLSearchParams(window.location.search).get('id');
-        async function init() {
-            const k = await endpoints.getKingdoms();
-            populateSelect('kerajaan', k, 'kerajaan_id', 'nama_kerajaan');
-            const t = await endpoints.getTokohById(id);
-            document.getElementById('nama').value = t.nama_tokoh;
-            document.getElementById('bio').value = t.biografi_singkat;
-            document.getElementById('lahir').value = t.tahun_lahir;
-            document.getElementById('wafat').value = t.tahun_wafat;
-            if(t.kerajaan_id) document.getElementById('kerajaan').value = t.kerajaan_id;
-        }
-        init();
-        document.getElementById('form').addEventListener('submit', async(e)=>{
-            e.preventDefault();
-            try {
-                await endpoints.updateTokoh(id, {
-                    nama_tokoh: document.getElementById('nama').value,
-                    biografi_singkat: document.getElementById('bio').value,
-                    tahun_lahir: parseInt(document.getElementById('lahir').value)||null,
-                    tahun_wafat: parseInt(document.getElementById('wafat').value)||null,
-                    kerajaan_id: parseInt(document.getElementById('kerajaan').value)||null
-                });
-                alert("Update Sukses!"); window.location.href='tokoh.html';
-            } catch(err){alert(err.message);}
-        });
-    </script>
+    <script type="module" src="modules/main.js"></script>
 </body>
 </html>

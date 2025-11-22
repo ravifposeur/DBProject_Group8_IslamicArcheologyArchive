@@ -14,21 +14,6 @@
             <button type="submit">Simpan</button>
         </form>
     </main>
-    <script type="module">
-        import { endpoints } from './modules/api.js';
-        document.getElementById('form').addEventListener('submit', async(e)=>{
-            e.preventDefault();
-            try {
-                await endpoints.addArkeolog({
-                    nama_lengkap: document.getElementById('nama').value,
-                    afiliasi_institusi: document.getElementById('inst').value,
-                    spesialisasi: document.getElementById('spec').value,
-                    email: document.getElementById('email').value,
-                    nomor_telepon: document.getElementById('telp').value
-                });
-                alert("Sukses!"); window.location.href='arkeolog.html';
-            } catch(err){alert(err.message);}
-        });
-    </script>
+    <script type="module" src="modules/main.js"></script>
 </body>
 </html>

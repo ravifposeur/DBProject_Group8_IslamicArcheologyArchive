@@ -13,42 +13,6 @@
         <input type="text" id="search" placeholder="🔍 Cari Tokoh..." style="width: 100%; padding: 10px; margin-bottom: 20px;">
         <div id="list" class="grid-container">Memuat...</div>
     </main>
-    <script type="module">
-        import { endpoints } from './modules/api.js';
-        import { isLoggedIn } from './modules/auth.js';
-        async function load() {
-            try {
-                const data = await endpoints.getTokoh();
-                const container = document.getElementById('list');
-                const userIn = isLoggedIn();
-                
-                const render = (items) => {
-                    container.innerHTML = items.map(t => `
-                        <div class="card-situs">
-                            <div style="display:flex; justify-content:space-between;">
-                                <h3>${t.nama_tokoh}</h3>
-                                ${userIn ? `<div>
-                                    <a href="edit-tokoh.html?id=${t.tokoh_id}" class="btn-xs" style="background:#3498db; text-decoration:none; padding:3px 8px; color:white;">✏️</a>
-                                    <button onclick="window.del(${t.tokoh_id})" class="btn-xs" style="background:#c0392b; color:white;">🗑️</button>
-                                </div>` : ''}
-                            </div>
-                            <span class="badge">${t.nama_kerajaan || '?'}</span>
-                            <p>${t.biografi_singkat}</p>
-                            ${userIn ? `<div style="margin-top:10px; border-top:1px solid #eee; padding-top:5px;">
-                                <a href="manage-gelar.html?id=${t.tokoh_id}" style="font-size:0.8rem;">🎖️ Gelar</a> | 
-                                <a href="link-atribusi.html" style="font-size:0.8rem;">🔗 Atribusi</a>
-                            </div>` : ''}
-                        </div>`).join('');
-                };
-                render(data);
-                document.getElementById('search').addEventListener('keyup', (e) => {
-                    const term = e.target.value.toLowerCase();
-                    render(data.filter(x => x.nama_tokoh.toLowerCase().includes(term)));
-                });
-            } catch(e) { document.getElementById('list').innerHTML = 'Error.'; }
-        }
-        window.del = async(id) => { if(confirm("Hapus?")) { await endpoints.deleteTokoh(id); location.reload(); }};
-        load();
-    </script>
+    <script type="module" src="modules/main.js"></script>
 </body>
 </html>
