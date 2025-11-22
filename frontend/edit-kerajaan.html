@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Edit Kerajaan</title><link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/components.css"></head>
+<body>
+    <nav><a href="kerajaan.html">← Kembali</a></nav>
+    <main class="form-container">
+        <h2>Edit Kerajaan</h2>
+        <form id="form">
+            <input type="text" id="nama" required placeholder="Nama Kerajaan">
+            <input type="text" id="pusat" placeholder="Pusat Pemerintahan">
+            <div class="row"><input type="number" id="berdiri" placeholder="Tahun Berdiri"><input type="number" id="runtuh" placeholder="Tahun Runtuh"></div>
+            <textarea id="desc" required placeholder="Deskripsi" style="width:100%; padding:10px; margin-bottom:10px;"></textarea>
+            <button type="submit">Update</button>
+        </form>
+    </main>
+    <script type="module" src="modules/main.js"></script>
+</body>
+</html>
