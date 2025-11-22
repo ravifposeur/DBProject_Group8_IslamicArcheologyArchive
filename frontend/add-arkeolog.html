@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Tambah Arkeolog</title><link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/components.css"></head>
+<body>
+    <nav><a href="arkeolog.html">← Kembali</a></nav>
+    <main class="form-container">
+        <h2>Tambah Arkeolog</h2>
+        <form id="form">
+            <input type="text" id="nama" required placeholder="Nama Lengkap">
+            <input type="text" id="inst" required placeholder="Institusi">
+            <input type="text" id="spec" required placeholder="Spesialisasi">
+            <input type="email" id="email" required placeholder="Email">
+            <input type="text" id="telp" required placeholder="No. Telepon">
+            <button type="submit">Simpan</button>
+        </form>
+    </main>
+    <script type="module">
+        import { endpoints } from './modules/api.js';
+        document.getElementById('form').addEventListener('submit', async(e)=>{
+            e.preventDefault();
+            try {
+                await endpoints.addArkeolog({
+                    nama_lengkap: document.getElementById('nama').value,
+                    afiliasi_institusi: document.getElementById('inst').value,
+                    spesialisasi: document.getElementById('spec').value,
+                    email: document.getElementById('email').value,
+                    nomor_telepon: document.getElementById('telp').value
+                });
+                alert("Sukses!"); window.location.href='arkeolog.html';
+            } catch(err){alert(err.message);}
+        });
+    </script>
+</body>
+</html>

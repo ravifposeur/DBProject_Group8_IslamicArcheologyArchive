@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><title>Edit Arkeolog</title><link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/components.css"></head>
+<body>
+    <nav><a href="arkeolog.html">← Kembali</a></nav>
+    <main class="form-container">
+        <h2>Edit Arkeolog</h2>
+        <form id="form">
+            <input type="text" id="nama" required placeholder="Nama">
+            <input type="text" id="inst" required placeholder="Institusi">
+            <input type="text" id="spec" required placeholder="Spesialisasi">
+            <input type="email" id="email" required placeholder="Email">
+            <input type="text" id="telp" required placeholder="No. Telepon">
+            <button type="submit">Update</button>
+        </form>
+    </main>
+    <script type="module">
+        import { endpoints } from './modules/api.js';
+        const id = new URLSearchParams(window.location.search).get('id');
+        async function init() {
+            const d = await endpoints.getArkeologById(id);
+            document.getElementById('nama').value = d.nama_lengkap;
+            document.getElementById('inst').value = d.afiliasi_institusi;
+            document.getElementById('spec').value = d.spesialisasi;
+            document.getElementById('email').value = d.email;
+            document.getElementById('telp').value = d.nomor_telepon;
+        }
+        init();
+        document.getElementById('form').addEventListener('submit', async(e)=>{
+            e.preventDefault();
+            try {
+                await endpoints.updateArkeolog(id, {
+                    nama_lengkap: document.getElementById('nama').value,
+                    afiliasi_institusi: document.getElementById('inst').value,
+                    spesialisasi: document.getElementById('spec').value,
+                    email: document.getElementById('email').value,
+                    nomor_telepon: document.getElementById('telp').value
+                });
+                alert("Sukses!"); window.location.href='arkeolog.html';
+            } catch(err){alert(err.message);}
+        });
+    </script>
+</body>
+</html>
