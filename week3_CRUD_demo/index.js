@@ -1,10 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const helmet = require('helmet');
+const cors = require('cors');
 const pool = require('./db'); 
 
 const app = express();
 app.use(helmet());
+app.use(cors());
 const port = 3000;
 
 app.use(express.json());

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Verifikator</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body>
+    <nav>
+        <div class="logo">🏛️ Admin Panel</div>
+        <div class="links">
+            <a href="index.html">← Kembali ke Peta</a>
+            <a href="#" onclick="localStorage.removeItem('token'); window.location='login.html'">Logout</a>
+        </div>
+    </nav>
+
+    <main id="dashboard-container">
+        <h1>Dashboard Verifikasi</h1>
+        
+        <section>
+            <h2>Situs Pending</h2>
+            <div id="pending-sites-list" class="grid-container">
+                Memuat...
+            </div>
+        </section>
+
+        <hr style="margin: 40px 0; border: 0; border-top: 1px solid #ddd;">
+
+        <section>
+            <h2>Artefak Pending</h2>
+            <div id="pending-artefacts-list" class="grid-container">
+                Memuat...
+            </div>
+        </section>
+    </main>
+
+    <script type="module" src="modules/dashboard.js"></script>
+</body>
+</html>

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Archive</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="assets/css/style.css">       <link rel="stylesheet" href="assets/css/components.css">  <link rel="stylesheet" href="assets/css/map.css"> 
+</head>
+<body>
+    <nav>
+        <div class="logo">🏛️ Javanese Islamic Archive</div>
+        <div class="links">
+            <a href="index.html">Home</a>
+            <a href="add.html">Tambahkan Situs</a>
+            <a href="add-artefak.html">Tambahkan Objek</a> <span id="nav-auth">Loading...</span>
+        </div>
+    </nav>
+
+    <main>
+        <div id="mapid"></div>
+
+        <h2>Situs Terverifikasi</h2>
+        <div id="situs-list" class="grid-container">Memuat data...</div>
+    </main>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script type="module" src="modules/main.js"></script>
+</body>
+</html>

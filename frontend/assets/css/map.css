@@ -1,0 +1,31 @@
+#mapid {
+    height: 400px;
+    width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1;
+    margin-bottom: 25px;
+    border: 2px solid #fff;
+}
+
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    font-family: 'Segoe UI', sans-serif;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+}
+
+.leaflet-popup-content b {
+    color: #2c3e50;
+    font-size: 1.1em;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.leaflet-popup-content {
+    margin: 12px;
+    line-height: 1.4;
+}
+
+.leaflet-tile-container img {
+    box-shadow: none !important;
+}

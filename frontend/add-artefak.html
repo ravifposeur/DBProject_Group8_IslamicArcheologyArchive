@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tambahkan Objek</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body>
+    <nav><a href="index.html">← Kembali ke Peta</a></nav>
+    
+    <main class="form-container">
+        <h2>Tambahkan Objek Baru</h2>
+        <form id="form-add-artefact">
+            <div class="form-group">
+                <label>Ditemukan di Situs mana?</label>
+                <select id="situs_id" required>
+                    <option value="">Memuat...</option>
+                </select>
+            </div>
+
+            <input type="text" id="nama_objek" required placeholder="Nama Objek">
+            
+            <div class="row">
+                <input type="text" id="jenis_objek" required placeholder="Jenis (misal Senjata, Perhiasan)">
+                <input type="text" id="bahan" required placeholder="Material (misal Batu, Emas)">
+            </div>
+
+            <h3>Dimensi (cm)</h3>
+            <div class="row">
+                <input type="number" id="panjang" step="any" required placeholder="Panjang">
+                <input type="number" id="lebar" step="any" required placeholder="Lebar">
+                <input type="number" id="tinggi" step="any" required placeholder="Tinggi">
+            </div>
+
+            <button type="submit">Submit</button>
+        </form>
+    </main>
+    <script type="module" src="modules/main.js"></script>
+</body>
+</html>

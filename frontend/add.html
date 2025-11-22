@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Tambahkan Situs</title>
+    <link rel="stylesheet" href="assets/css/style.css">       <link rel="stylesheet" href="assets/css/components.css">  <link rel="stylesheet" href="assets/css/map.css"> 
+</head>
+<body>
+    <nav><a href="index.html">← Kembali</a></nav>
+    
+    <main class="form-container">
+        <h2>Tambahkan Situs Baru</h2>
+        <form id="form-add-situs">
+            <input type="text" id="nama_situs" required placeholder="Nama Situs">
+            <div class="row">
+                <input type="text" id="jenis_situs" required placeholder="Jenis (Candi, dll)">
+                <input type="text" id="periode_sejarah" placeholder="Periode Sejarah">
+            </div>
+            
+            <select id="kerajaan_id"><option value="">Pilih Kerajaan...</option></select>
+            <input type="text" id="jalan_dusun" required placeholder="Jalan">
+            
+            <div class="row">
+                <select id="kota_id" required><option value="">Pilih Kota...</option></select>
+                <select id="kecamatan_id" required><option value="">Pilih Kecamatan...</option></select>
+                <select id="desa_kelurahan_id" required><option value="">Pilih Desa...</option></select>
+            </div>
+
+            <h3>Koordinat</h3>
+            <div class="row">
+                <input type="number" id="latitude" step="any" required placeholder="Lintang">
+                <input type="number" id="longitude" step="any" required placeholder="Bujur">
+            </div>
+            <button type="submit">Submit</button>
+        </form>
+    </main>
+    <script type="module" src="modules/main.js"></script>
+</body>
+</html>
