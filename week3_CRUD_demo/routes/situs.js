@@ -192,7 +192,7 @@ router.delete('/:id', authenticateToken, isAdmin, validate({params: paramsIdSche
     } catch (error) {
         console.error('Error saat hapus situs', error);
 
-        if(error.code == '23503') {
+        if(error.code === '23503') {
             return res.status(400).json({
                 message: 'Situs ini masih punya Objek Temuan yang terhubung'
             });

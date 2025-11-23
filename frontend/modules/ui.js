@@ -1,3 +1,5 @@
+import { isLoggedIn, getUserRole } from './auth.js';
+
 export function renderSiteCards(sites, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -8,17 +10,38 @@ export function renderSiteCards(sites, containerId) {
         return;
     }
 
+    const userIn = isLoggedIn();
+    const role = getUserRole();
+    const canEdit = userIn && (role === 'verifikator' || role === 'administrator');
+    const canDelete = userIn && (role === 'administrator');
+
     sites.forEach(s => {
         const card = document.createElement('div');
         card.className = 'card-situs';
+        
+        let adminActions = '';
+        if (canEdit) {
+            adminActions += `<a href="edit-situs.html?id=${s.situs_id}" class="btn-xs" style="background:#3498db; text-decoration:none; padding:5px 10px; color:white; border-radius:4px; margin-right:5px;">Edit</a>`;
+        }
+        if (canDelete) {
+            adminActions += `<button onclick="window.delItem('situs', ${s.situs_id})" class="btn-xs" style="background:#c0392b; color:white; border:none; padding:5px 10px; border-radius:4px; cursor:pointer;">Hapus</button>`;
+        }
+
         card.innerHTML = `
-            <h3>${s.nama_situs}</h3>
-            <span class="badge">${s.jenis_situs}</span>
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+                <h3>${s.nama_situs}</h3>
+                <span class="badge">${s.jenis_situs}</span>
+            </div>
+            
             <p class="location"> <strong>Lokasi</strong>: ${s.nama_desa_kelurahan}, ${s.nama_kecamatan}</p>
             <p class="desc">${s.nama_kerajaan ? '<strong>Kerajaan</strong>: ' + s.nama_kerajaan : 'Kerajaan Tidak Diketahui'}</p>
+            
+            <div style="margin-top:10px; margin-bottom:10px;">
+                ${adminActions}
+            </div>
+
             <div class="card-actions">
                 <button class="btn-map" onclick="window.viewOnMap(${s.latitude}, ${s.longitude})">Peta</button>
-                
                 <button class="btn-detail" onclick="window.loadSiteDetails(${s.situs_id})">Objek/Artefak</button>
             </div>
 
@@ -31,10 +54,33 @@ export function renderSiteCards(sites, containerId) {
     });
 }
 
+export function renderResearchers(researchers, containerId, situsId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const canMod = isLoggedIn() && (getUserRole() === 'verifikator' || getUserRole() === 'administrator');
+
+    if (!researchers || researchers.length === 0) {
+        container.innerHTML = '<small style="display:block; margin-bottom:10px;">Belum ada data peneliti.</small>';
+        return;
+    }
+
+    const listHtml = researchers.map(r => `
+        <li style="margin-bottom: 4px;">
+            <a href="arkeolog.html">${r.nama_lengkap}</a>
+            ${canMod ? ` <a href="#" onclick="window.unlinkPenelitian(${r.arkeolog_id}, ${situsId})" style="color:red; text-decoration:none; font-weight:bold; font-size:0.9em;">Hapus</a>` : ''}
+        </li>
+    `).join('');
+
+    container.innerHTML = `<strong>Tim Peneliti:</strong><ul style="margin:5px 0 15px 20px;">${listHtml}</ul>`;
+}
+
 export function renderArtefacts(artefacts, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
     
+    const canMod = isLoggedIn() && (getUserRole() === 'verifikator' || getUserRole() === 'administrator');
+
     if (!artefacts || artefacts.length === 0) {
         container.innerHTML = '<small>Tidak ada artefak terverifikasi.</small>';
         return;
@@ -42,16 +88,36 @@ export function renderArtefacts(artefacts, containerId) {
 
     container.innerHTML = artefacts.map(a => {
         let ownerHtml = '';
+        
         if (a.owners && a.owners.length > 0) {
-            const names = a.owners.map(o => `<a href="tokoh.html">${o.nama_tokoh}</a>`).join(', ');
+            const names = a.owners.map(o => {
+                let link = `<a href="tokoh.html">${o.nama_tokoh}</a>`;
+                if (canMod) {
+                    link += ` <a href="#" onclick="window.unlinkAtribusi(${a.objek_id}, ${o.tokoh_id}, ${a.situs_id})" style="color:red; text-decoration:none; margin-left:2px;">Hapus</a>`;
+                }
+                return link;
+            }).join(', ');
+            
             ownerHtml = `<div style="font-size:0.85em; color:#555; margin-top:2px;">Atribusi: ${names}</div>`;
+        }
+
+        let itemActions = '';
+        if (canMod) {
+            itemActions = `
+                <div style="margin-top:5px; font-size:0.9em;">
+                    <a href="edit-artefak.html?id=${a.objek_id}" style="color:#f39c12; text-decoration:none; margin-right:5px;">Edit</a>
+                    <a href="#" onclick="window.delItem('objek', ${a.objek_id})" style="color:#c0392b;">Hapus</a>
+                </div>
+            `;
         }
 
         return `
         <div class="artefact-item">
             <strong>${a.nama_objek}</strong> (${a.jenis_objek})<br>
             <small>Bahan: ${a.bahan}</small>
-            ${ownerHtml} </div>
+            ${ownerHtml} 
+            ${itemActions}
+        </div>
         `;
     }).join('');
 }

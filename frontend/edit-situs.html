@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Situs</title>
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+</head>
+<body>
+    <nav><a href="index.html">Kembali</a></nav>
+    <main class="form-container">
+        <h2>Edit Situs</h2>
+        <form id="form-edit-situs">
+            <input type="text" id="nama_situs" required placeholder="Nama Situs">
+            <div class="row">
+                <input type="text" id="jenis_situs" required placeholder="Jenis">
+                <input type="text" id="periode_sejarah" placeholder="Periode">
+            </div>
+            <select id="kerajaan_id"><option value="">Memuat...</option></select>
+            <input type="text" id="jalan_dusun" required placeholder="Jalan/Dusun">
+            <div class="row">
+                <input type="number" id="latitude" step="any" required>
+                <input type="number" id="longitude" step="any" required>
+            </div>
+            <input type="hidden" id="desa_kelurahan_id"> 
+            <button type="submit">Update Situs</button>
+        </form>
+    </main>
+    <script type="module" src="modules/main.js"></script>
+</body>
+</html>

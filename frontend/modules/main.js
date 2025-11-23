@@ -1,5 +1,5 @@
 import { endpoints } from './api.js';
-import { renderSiteCards, populateSelect, renderArtefacts } from './ui.js';
+import { renderSiteCards, populateSelect, renderArtefacts, renderResearchers } from './ui.js';
 import { initMap, addMarkers, flyTo } from './map.js';
 import { isLoggedIn, logout, saveToken, getUserRole } from './auth.js';
 
@@ -21,11 +21,7 @@ window.loadSiteDetails = async (situsId) => {
 
     try {
         const researchers = await endpoints.getResearchersBySite(situsId);
-        resContainer.innerHTML = researchers.length ? 
-            '<strong>Tim Peneliti:</strong><ul style="margin:5px 0 15px 20px;">' + 
-            researchers.map(r => `<li><a href="arkeolog.html">${r.nama_lengkap}</a></li>`).join('') + 
-            '</ul>' 
-            : '<small style="display:block; margin-bottom:10px;">Belum ada data peneliti.</small>';
+        renderResearchers(researchers, `researchers-${situsId}`, situsId);
 
         const rawArtefacts = await endpoints.getSiteArtefacts(situsId);
 
@@ -52,6 +48,8 @@ window.delItem = async (type, id) => {
         if(type === 'tokoh') await endpoints.deleteTokoh(id);
         if(type === 'arkeolog') await endpoints.deleteArkeolog(id);
         if(type === 'kerajaan') await endpoints.deleteKingdom(id);
+        if(type === 'situs') await endpoints.deleteSite(id);     
+        if(type === 'objek') await endpoints.deleteArtefact(id); 
         alert("Terhapus!");
         location.reload();
     } catch(e) { alert(e.message); }
@@ -107,8 +105,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div style="display:flex; justify-content:space-between;">
                             <h3>${t.nama_tokoh}</h3>
                             ${userIn ? `<div>
-                                <a href="edit-tokoh.html?id=${t.tokoh_id}" class="btn-xs" style="background:#3498db; text-decoration:none; padding:3px 8px; color:white;">✏️</a>
-                                <button onclick="window.delItem('tokoh', ${t.tokoh_id})" class="btn-xs" style="background:#c0392b; color:white;">🗑️</button>
+                                <a href="edit-tokoh.html?id=${t.tokoh_id}" class="btn-xs" style="background:#3498db; text-decoration:none; padding:3px 8px; color:white;">Edit</a>
+                                <button onclick="window.delItem('tokoh', ${t.tokoh_id})" class="btn-xs" style="background:#c0392b; color:white;">Hapus</button>
                             </div>` : ''}
                         </div>
                         <span class="badge">${t.nama_kerajaan || 'Kerajaan ?'}</span>
@@ -135,8 +133,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div style="display:flex; justify-content:space-between;">
                             <h3>${a.nama_lengkap}</h3>
                             ${userIn ? `<div>
-                                <a href="edit-arkeolog.html?id=${a.arkeolog_id}" class="btn-xs" style="background:#3498db; text-decoration:none; padding:3px 8px; color:white;">✏️</a>
-                                <button onclick="window.delItem('arkeolog', ${a.arkeolog_id})" class="btn-xs" style="background:#c0392b; color:white;">🗑️</button>
+                                <a href="edit-arkeolog.html?id=${a.arkeolog_id}" class="btn-xs" style="background:#3498db; text-decoration:none; padding:3px 8px; color:white;">Edit</a>
+                                <button onclick="window.delItem('arkeolog', ${a.arkeolog_id})" class="btn-xs" style="background:#c0392b; color:white;">Hapus</button>
                             </div>` : ''}
                         </div>
                         <p><strong>Institusi:</strong> ${a.afiliasi_institusi}</p>
@@ -160,8 +158,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                         <div style="display:flex; justify-content:space-between;">
                             <h3>${k.nama_kerajaan}</h3>
                             ${userIn ? `<div>
-                                <a href="edit-kerajaan.html?id=${k.kerajaan_id}" class="btn-xs" style="background:#3498db; text-decoration:none; padding:3px 8px; color:white;">✏️</a>
-                                <button onclick="window.delItem('kerajaan', ${k.kerajaan_id})" class="btn-xs" style="background:#c0392b; color:white;">🗑️</button>
+                                <a href="edit-kerajaan.html?id=${k.kerajaan_id}" class="btn-xs" style="background:#3498db; text-decoration:none; padding:3px 8px; color:white;">Edit</a>
+                                <button onclick="window.delItem('kerajaan', ${k.kerajaan_id})" class="btn-xs" style="background:#c0392b; color:white;">Hapus</button>
                             </div>` : ''}
                         </div>
                         <span class="badge">${k.pusat_pemerintahan || '?'}</span>
@@ -256,6 +254,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
+    const editArtForm = document.getElementById('form-edit-artefact');
+    if(editArtForm) {
+        // Populates the dropdown with sites so the user can change the location if needed
+        endpoints.getVerifiedSites().then(s => populateSelect('situs_id', s, 'situs_id', 'nama_situs'));
+    }
+
     const handleAdd = (formId, apiCall, redirect) => {
         const form = document.getElementById(formId);
         if(form) {
@@ -336,6 +340,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     handleEdit('form-edit-arkeolog', endpoints.getArkeologById, endpoints.updateArkeolog, 'arkeolog.html');
     handleEdit('form-edit-kingdom', endpoints.getKingdomById, endpoints.updateKingdom, 'kerajaan.html');
     handleEdit('form-edit-situs', endpoints.getSiteById, endpoints.updateSite, 'index.html');
+    handleEdit('form-edit-artefact', endpoints.getArtefactById, endpoints.updateArtefact, 'index.html');
 
     const linkPenelitian = document.getElementById('form-link-penelitian');
     if(linkPenelitian) {
@@ -405,13 +410,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (kotaContainer) {
         if (!isLoggedIn()) { window.location.href = 'login.html'; return; }
 
-        let selKota, selKec;
+        let selKotaId = null;
+        let selKecId = null;
+
         const item = (id, name, type, pid) => `
-            <div class="list-item" onclick="window.sel('${type}',${id},'${name}',${pid})">
+            <div class="list-item" id="${type}-${id}" onclick="window.sel('${type}',${id},'${name}',${pid})">
                 <span>${name}</span>
                 <div>
-                    <button class="btn-xs" style="background:#f39c12; color:white;" onclick="event.stopPropagation();window.ed('${type}',${id},'${name}',${pid})">✏️</button>
-                    <button class="btn-xs" style="background:#c0392b; color:white;" onclick="event.stopPropagation();window.delLoc('${type}',${id})">🗑️</button>
+                    <button class="btn-xs" style="background:#f39c12; color:white;" onclick="event.stopPropagation();window.ed('${type}',${id},'${name}',${pid})">Edit</button>
+                    <button class="btn-xs" style="background:#c0392b; color:white;" onclick="event.stopPropagation();window.delLoc('${type}',${id})">Hapus</button>
                 </div>
             </div>
         `;
@@ -424,19 +431,53 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
 
         window.sel = async(type, id, name, pid) => {
-            if(type==='kota') {
-                selKota=id; 
-                document.getElementById('kec').innerHTML='Memuat...';
-                document.getElementById('desa').innerHTML='Pilih Kecamatan...';
+            document.querySelectorAll('.list-item').forEach(el => el.classList.remove('selected'));
+            const el = document.getElementById(`${type}-${id}`);
+            if(el) el.classList.add('selected');
+
+            if(type === 'kota') {
+                selKotaId = id; 
+                selKecId = null; 
+                document.getElementById('kec').innerHTML = 'Memuat...';
+                document.getElementById('desa').innerHTML = '<i>Pilih Kecamatan...</i>';
+                
                 const d = await endpoints.getDistricts(id);
-                document.getElementById('kec').innerHTML = d.map(x => item(x.kecamatan_id, x.nama_kecamatan, 'kec', id)).join('');
-            } else if(type==='kec') {
-                selKec=id; 
-                document.getElementById('desa').innerHTML='Memuat...';
+                document.getElementById('kec').innerHTML = d.length ? d.map(x => item(x.kecamatan_id, x.nama_kecamatan, 'kec', id)).join('') : '<i>(Kosong)</i>';
+            } 
+            else if(type === 'kec') {
+                selKecId = id;
+                document.getElementById('desa').innerHTML = 'Memuat...';
+                
                 const d = await endpoints.getVillages(id);
-                document.getElementById('desa').innerHTML = d.map(x => item(x.desa_kelurahan_id, x.nama_desa_kelurahan, 'desa', id)).join('');
+                document.getElementById('desa').innerHTML = d.length ? d.map(x => item(x.desa_kelurahan_id, x.nama_desa_kelurahan, 'desa', id)).join('') : '<i>(Kosong)</i>';
             }
         };
+
+        document.getElementById('btn-add-kota-m').addEventListener('click', async () => {
+            const n = prompt("Nama Kota Baru:");
+            if(n) {
+                try { await endpoints.addCity(n); loadLoc(); } 
+                catch(e) { alert(e.message); }
+            }
+        });
+
+        document.getElementById('btn-add-kec-m').addEventListener('click', async () => {
+            if(!selKotaId) { alert("Pilih KOTA terlebih dahulu!"); return; }
+            const n = prompt("Nama Kecamatan Baru:");
+            if(n) {
+                try { await endpoints.addDistrict(n, selKotaId); window.sel('kota', selKotaId); } 
+                catch(e) { alert(e.message); }
+            }
+        });
+
+        document.getElementById('btn-add-desa-m').addEventListener('click', async () => {
+            if(!selKecId) { alert("Pilih KECAMATAN terlebih dahulu!"); return; }
+            const n = prompt("Nama Desa Baru:");
+            if(n) {
+                try { await endpoints.addVillage(n, selKecId); window.sel('kec', selKecId); } 
+                catch(e) { alert(e.message); }
+            }
+        });
 
         window.ed = async(t, id, old, pid) => {
             const n = prompt("Nama baru:", old); if(!n) return;
@@ -444,19 +485,21 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if(t==='kota') await endpoints.updateCity(id, n);
                 if(t==='kec') await endpoints.updateDistrict(id, n, pid);
                 if(t==='desa') await endpoints.updateVillage(id, n, pid);
-                alert("Update Sukses!");
+                alert("Sukses!");
                 if(t==='kota') loadLoc(); else if(t==='kec') window.sel('kota', pid); else window.sel('kec', pid);
             } catch(e){alert(e.message);}
         };
 
         window.delLoc = async(t, id) => {
-            if(!confirm("Hapus? Data yang termuat dalam lokasi ini akan hilang.")) return;
+            if(!confirm("Hapus?")) return;
             try {
                 if(t==='kota') await endpoints.deleteCity(id);
                 if(t==='kec') await endpoints.deleteDistrict(id);
                 if(t==='desa') await endpoints.deleteVillage(id);
                 alert("Terhapus!");
-                if(t==='kota') loadLoc(); else if(t==='kec') window.sel('kota', selKota); else window.sel('kec', selKec);
+                if(t==='kota') { loadLoc(); document.getElementById('kec').innerHTML='...'; document.getElementById('desa').innerHTML='...'; }
+                else if(t==='kec') { window.sel('kota', selKotaId); document.getElementById('desa').innerHTML='...'; }
+                else window.sel('kec', selKecId);
             } catch(e){alert(e.message);}
         };
 
@@ -499,3 +542,21 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadGelar();
     }
 });
+
+window.unlinkPenelitian = async (arkeologId, situsId) => {
+    if(!confirm("Hapus arkeolog ini dari situs?")) return;
+    try {
+        await endpoints.deletePenelitian(arkeologId, situsId);
+        alert("Terhapus!");
+        window.loadSiteDetails(situsId);
+    } catch(e) { alert(e.message); }
+};
+
+window.unlinkAtribusi = async (objekId, tokohId, situsId) => {
+    if(!confirm("Hapus atribusi tokoh ini?")) return;
+    try {
+        await endpoints.deleteAtribusi(objekId, tokohId);
+        alert("Terhapus!");
+        window.loadSiteDetails(situsId);
+    } catch(e) { alert(e.message); }
+};

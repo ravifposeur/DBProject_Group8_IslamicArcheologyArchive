@@ -36,10 +36,14 @@ export const endpoints = {
     approveSite: (id) => apiRequest(`/api/situs/approve/${id}`, 'PUT'),
     rejectSite: (id) => apiRequest(`/api/situs/reject/${id}`, 'PUT'),
     deleteSite: (id) => apiRequest(`/api/situs/${id}`, 'DELETE'),
+    getSiteById: (id) => apiRequest(`/api/situs/${id}`),
+    updateSite: (id, data) => apiRequest(`/api/situs/${id}`, 'PUT', data),
     
     approveArtefact: (id) => apiRequest(`/api/objek/approve/${id}`, 'PUT'),
     rejectArtefact: (id) => apiRequest(`/api/objek/reject/${id}`, 'PUT'),
     deleteArtefact: (id) => apiRequest(`/api/objek/${id}`, 'DELETE'),
+    getArtefactById: (id) => apiRequest(`/api/objek/${id}`),
+    updateArtefact: (id, data) => apiRequest(`/api/objek/${id}`, 'PUT', data),
 
     getTokoh: () => apiRequest('/api/tokoh'),
     getTokohById: (id) => apiRequest(`/api/tokoh/${id}`),
