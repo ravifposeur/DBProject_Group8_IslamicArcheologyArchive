@@ -5,7 +5,7 @@ const { authenticateToken, isVerifier, isAdmin } = require('../middleware/auth')
 const validate = require('../middleware/validation'); 
 const { 
     createSitusSchema, 
-    // updateSitusSchema,
+    updateSitusSchema,
     paramsIdSchema       
 } = require('../validators/situs.validator');
 router.get('/verified', async (req,res) =>{
@@ -199,6 +199,58 @@ router.delete('/:id', authenticateToken, isAdmin, validate({params: paramsIdSche
         }
 
         res.status(500).json({message: 'Error di server.'});
+    }
+});
+
+router.get('/:id', authenticateToken, validate({ params: paramsIdSchema }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query("SELECT * FROM situs_arkeologi WHERE situs_id = $1", [id]);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Situs tidak ditemukan' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error ambil situs by id:', error);
+        res.status(500).json({ message: 'Error server.' });
+    }
+});
+
+router.put('/:id', authenticateToken, isVerifier, validate({ params: paramsIdSchema, body: updateSitusSchema }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            nama_situs, jalan_dusun, desa_kelurahan_id,
+            latitude, longitude, periode_sejarah,
+            jenis_situs, kerajaan_id
+        } = req.body;
+
+        const query = `
+            UPDATE situs_arkeologi 
+            SET nama_situs=$1, jalan_dusun=$2, desa_kelurahan_id=$3, 
+                latitude=$4, longitude=$5, periode_sejarah=$6, 
+                jenis_situs=$7, kerajaan_id=$8
+            WHERE situs_id=$9 
+            RETURNING *
+        `;
+
+        const values = [
+            nama_situs, jalan_dusun, desa_kelurahan_id,
+            latitude, longitude, periode_sejarah,
+            jenis_situs, kerajaan_id, id
+        ];
+
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Situs tidak ditemukan' });
+        }
+
+        res.json({ message: 'Situs berhasil diupdate', data: result.rows[0] });
+    } catch (error) {
+        console.error('Error saat Edit Situs', error);
+        res.status(500).json({ message: 'Error di Server' });
     }
 });
 
