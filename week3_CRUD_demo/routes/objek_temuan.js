@@ -11,8 +11,6 @@ const {
     paramsSitusIdSchema
 } = require('../validators/objek_temuan.validator');
 
-// GET VERIFIED OBJECT BERDASAR SITUS
-
 router.get('/verified/by-situs/:situs_id', validate({ params: paramsSitusIdSchema }), async (req, res) => {
     try {
         const {situs_id} = req.params;
@@ -26,8 +24,6 @@ router.get('/verified/by-situs/:situs_id', validate({ params: paramsSitusIdSchem
         res.status(500).json({message: 'Error di Server'});
     }
 });
-
-// POST OBJECT TO PENDING
 
 router.post('/', authenticateToken, validate({ body: createObjekSchema }), async (req, res) => {
     try {
@@ -68,8 +64,6 @@ router.post('/', authenticateToken, validate({ body: createObjekSchema }), async
 
 });
 
-// GET PENDING OBJECT
-
 router.get('/pending', authenticateToken, isVerifier, async (req, res) => {
     try {
         const result = await pool.query(
@@ -85,9 +79,6 @@ router.get('/pending', authenticateToken, isVerifier, async (req, res) => {
         res.status(500).json({message: 'Error server.'});
     }
 });
-
-
-// APPROVED OBJECT
 
 router.put('/approve/:id', authenticateToken, isVerifier, validate({ params: paramsIdSchema }), async (req, res) => {
     try {
@@ -112,7 +103,6 @@ router.put('/approve/:id', authenticateToken, isVerifier, validate({ params: par
     }
 });
 
-// REJECT OBJECT
 router.put('/reject/:id', authenticateToken, isVerifier, validate({ params: paramsIdSchema }), async (req, res) => {
     try {
         const { id } = req.params;
@@ -162,6 +152,56 @@ router.delete('/:id', authenticateToken, isAdmin, validate({ params: paramsIdSch
         }
 
         res.status(500).json({message: 'Error di server.'});
+    }
+});
+
+router.get('/:id', authenticateToken, validate({ params: paramsIdSchema }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query("SELECT * FROM objek_temuan WHERE objek_id = $1", [id]);
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Objek tidak ditemukan' });
+        }
+        res.json(result.rows[0]);
+    } catch (error) {
+        console.error('Error ambil objek by id:', error);
+        res.status(500).json({ message: 'Error server.' });
+    }
+});
+
+router.put('/:id', authenticateToken, isVerifier, validate({ params: paramsIdSchema, body: updateObjekSchema }), async (req, res) => {
+    try {
+        const { id } = req.params;
+        const {
+            nama_objek, jenis_objek, bahan, panjang, tinggi, lebar,
+            teks_transliterasi, aksara, bahasa, situs_id
+        } = req.body;
+
+        const query = `
+            UPDATE objek_temuan
+            SET nama_objek=$1, jenis_objek=$2, bahan=$3, panjang=$4, tinggi=$5, lebar=$6,
+                teks_transliterasi=$7, aksara=$8, bahasa=$9, situs_id=$10
+            WHERE objek_id=$11
+            RETURNING *
+        `;
+
+        const values = [
+            nama_objek, jenis_objek, bahan, panjang, tinggi, lebar,
+            teks_transliterasi, aksara, bahasa, situs_id, id
+        ];
+
+        const result = await pool.query(query, values);
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ message: 'Objek tidak ditemukan' });
+        }
+
+        res.json({ message: 'Objek berhasil diupdate', data: result.rows[0] });
+
+    } catch (error) {
+        console.error('Error saat update objek:', error);
+        res.status(500).json({ message: 'Error server.' });
     }
 });
 
