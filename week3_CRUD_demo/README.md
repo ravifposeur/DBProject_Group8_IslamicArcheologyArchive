@@ -47,9 +47,8 @@ This API is intended to be used by a separate frontend application (e.g., Leafle
 ### 2. Clone and Install
 
 ```bash
-git clone https://github.com/ravifposeur/archeology_db_project.git
-cd archeology_db_project
-
+git clone https://github.com/ravifposeur/DBProject_Group8_IslamicArcheologyArchive.git
+cd DBProject_Group8_IslamicArcheologyArchive/week3_CRUD_demo
 npm install
 ```
 
@@ -76,7 +75,7 @@ GRANT ALL PRIVILEGES ON DATABASE arkeologiDB TO arkeologi_app;
 GRANT ALL ON SCHEMA public TO arkeologi_app;
 ```
 
-3. Execute the `scheme.sql` file using DBeaver or `psql`.
+3. Execute the `schema.sql` file using DBeaver or `psql`.
 
 
 ## 4. Environment Variables
@@ -306,7 +305,7 @@ Unlinks them.
 # Project Structure
 
 ```
-proyek_arkeologi_backend/
+week3_CRUD_demo/
 ├── middleware/
 │   ├── auth.js
 │   └── validation.js
@@ -325,10 +324,9 @@ proyek_arkeologi_backend/
 │   ├── ...other validators
 │   └── shared.validator.js
 ├── .env
-├── .gitignore
 ├── db.js
 ├── index.js
 ├── package.json
-└── skema_lengkap.sql
+└── schema.sql
 ```
 
