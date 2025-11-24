@@ -256,7 +256,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     const editArtForm = document.getElementById('form-edit-artefact');
     if(editArtForm) {
-        // Populates the dropdown with sites so the user can change the location if needed
         endpoints.getVerifiedSites().then(s => populateSelect('situs_id', s, 'situs_id', 'nama_situs'));
     }
 
