@@ -1,97 +1,390 @@
-import { getToken, logout } from './auth.js';
+const BASE_URL = 'https://arkeologis-be.vercel.app/api';
 
-const API_BASE = 'http://localhost:3000'; 
+import { getToken } from './auth.js';
 
-async function apiRequest(endpoint, method = 'GET', body = null) {
-    const headers = { 'Content-Type': 'application/json' };
-    const token = getToken();
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const config = { method, headers };
-    if (body) config.body = JSON.stringify(body);
-
+export async function getVerifiedSitus() {
     try {
-        const response = await fetch(`${API_BASE}${endpoint}`, config);
-        const data = await response.json();
-        if (response.status === 401 || response.status === 403) {
-            if (response.status === 401) logout();
-            throw new Error(data.message || 'Akses Ditolak');
+        const response = await fetch(`${BASE_URL}/situs/verified`);
+        
+        if (!response.ok) {
+            throw new Error(`Gagal mengambil data: ${response.statusText}`);
         }
-        if (!response.ok) throw new Error(data.message || 'Gagal Request');
+
+        const data = await response.json();
         return data;
     } catch (error) {
-        console.error(`API Error (${endpoint}):`, error);
-        throw error;
+        console.error("Error API:", error);
+        return []; 
     }
 }
 
-export const endpoints = {
-    getVerifiedSites: () => apiRequest('/api/situs/verified'),
-    getSiteArtefacts: (situsId) => apiRequest(`/api/objek/verified/by-situs/${situsId}`),
-    getPendingSites: () => apiRequest('/api/situs/pending'),
-    getPendingArtefacts: () => apiRequest('/api/objek/pending'),
-    addSite: (data) => apiRequest('/api/situs', 'POST', data),
-    addArtefact: (data) => apiRequest('/api/objek', 'POST', data),
+export async function loginUser(email, password) {
+    try {
+        const response = await fetch(`${BASE_URL}/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json' 
+            },
+            body: JSON.stringify({ email, password })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Login gagal');
+        }
+
+        return data; 
+    } catch (error) {
+        console.error("Error Login:", error);
+        throw error; 
+    }
+}
+
+export async function postSitusBaru(dataSitus) {
+    const token = getToken();
     
-    approveSite: (id) => apiRequest(`/api/situs/approve/${id}`, 'PUT'),
-    rejectSite: (id) => apiRequest(`/api/situs/reject/${id}`, 'PUT'),
-    deleteSite: (id) => apiRequest(`/api/situs/${id}`, 'DELETE'),
-    getSiteById: (id) => apiRequest(`/api/situs/${id}`),
-    updateSite: (id, data) => apiRequest(`/api/situs/${id}`, 'PUT', data),
+    if (!token) {
+        throw new Error("Anda harus login dulu!");
+    }
+
+    const response = await fetch(`${BASE_URL}/situs`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` // <--- INI KUNCINYA
+        },
+        body: JSON.stringify(dataSitus)
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+        if (result.errors) {
+            const msg = result.errors.map(e => e.message).join('\n');
+            throw new Error(msg);
+        }
+        throw new Error(result.message || 'Gagal menambah situs');
+    }
+
+    return result;
+}
+
+export async function getPendingSitus() {
+    const token = localStorage.getItem('arkeo_token'); // Atau gunakan getToken() jika sudah diimport
     
-    approveArtefact: (id) => apiRequest(`/api/objek/approve/${id}`, 'PUT'),
-    rejectArtefact: (id) => apiRequest(`/api/objek/reject/${id}`, 'PUT'),
-    deleteArtefact: (id) => apiRequest(`/api/objek/${id}`, 'DELETE'),
-    getArtefactById: (id) => apiRequest(`/api/objek/${id}`),
-    updateArtefact: (id, data) => apiRequest(`/api/objek/${id}`, 'PUT', data),
+    const response = await fetch(`${BASE_URL}/situs/pending`, {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
 
-    getTokoh: () => apiRequest('/api/tokoh'),
-    getTokohById: (id) => apiRequest(`/api/tokoh/${id}`),
-    addTokoh: (data) => apiRequest('/api/tokoh', 'POST', data),
-    updateTokoh: (id, data) => apiRequest(`/api/tokoh/${id}`, 'PUT', data),
-    deleteTokoh: (id) => apiRequest(`/api/tokoh/${id}`, 'DELETE'),
+    if (!response.ok) {
+        throw new Error("Gagal mengambil data pending (Mungkin bukan Verifikator?)");
+    }
+    return await response.json();
+}
 
-    getArkeolog: () => apiRequest('/api/arkeolog'),
-    getArkeologById: (id) => apiRequest(`/api/arkeolog/${id}`),
-    addArkeolog: (data) => apiRequest('/api/arkeolog', 'POST', data),
-    updateArkeolog: (id, data) => apiRequest(`/api/arkeolog/${id}`, 'PUT', data),
-    deleteArkeolog: (id) => apiRequest(`/api/arkeolog/${id}`, 'DELETE'),
+export async function approveSitus(id) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/situs/approve/${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Gagal menyetujui situs");
+    return await response.json();
+}
 
-    getKingdoms: () => apiRequest('/api/kerajaan'),
-    getKingdomById: (id) => apiRequest(`/api/kerajaan/${id}`),
-    addKingdom: (data) => apiRequest('/api/kerajaan', 'POST', data),
-    updateKingdom: (id, data) => apiRequest(`/api/kerajaan/${id}`, 'PUT', data),
-    deleteKingdom: (id) => apiRequest(`/api/kerajaan/${id}`, 'DELETE'),
+export async function rejectSitus(id) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/situs/reject/${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Gagal menolak situs");
+    return await response.json();
+}
 
-    getCities: () => apiRequest('/api/alamat/kota'),
-    getDistricts: (kotaId) => apiRequest(`/api/alamat/kecamatan/by-kota/${kotaId}`),
-    getVillages: (kecId) => apiRequest(`/api/alamat/desa/by-kecamatan/${kecId}`),
+export async function getObjekBySitus(situsId) {
+    try {
+        const response = await fetch(`${BASE_URL}/objek/verified/by-situs/${situsId}`);
+        if (!response.ok) return [];
+        return await response.json();
+    } catch (error) {
+        console.error("Error API Objek:", error);
+        return [];
+    }
+}
+
+/**
+ * Kirim Objek Baru
+ * Endpoint: POST /api/objek
+ */
+export async function postObjekBaru(dataObjek) {
+    const token = localStorage.getItem('arkeo_token'); // Ambil token
+    if (!token) throw new Error("Wajib login!");
+
+    const response = await fetch(`${BASE_URL}/objek`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(dataObjek)
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+        if (result.errors) {
+            const msg = result.errors.map(e => e.message).join('\n');
+            throw new Error(msg);
+        }
+        throw new Error(result.message);
+    }
+    return result;
+}
+
+export async function getKota() {
+    // Endpoint: GET /api/alamat/kota
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/alamat/kota`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) return [];
+    return await response.json();
+}
+
+export async function getKecamatan(kotaId) {
+    // Endpoint: GET /api/alamat/kecamatan/by-kota/:id
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/alamat/kecamatan/by-kota/${kotaId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) return [];
+    return await response.json();
+}
+
+export async function getDesa(kecamatanId) {
+    // Endpoint: GET /api/alamat/desa/by-kecamatan/:id
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/alamat/desa/by-kecamatan/${kecamatanId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) return [];
+    return await response.json();
+}
+
+// 1. Tambah Kerajaan
+export async function postKerajaan(data) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/kerajaan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error("Gagal menambah kerajaan");
+    return await response.json();
+}
+
+// 2. Tambah Arkeolog (Crowdsourcing Ready)
+export async function postArkeolog(data) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/arkeolog`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error("Gagal menambah arkeolog");
+    return await response.json();
+}
+
+// 3. Tambah Tokoh
+export async function postTokoh(data) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/tokoh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(data)
+    });
+    if (!response.ok) throw new Error("Gagal menambah tokoh");
+    return await response.json();
+}
+
+// 4. Tambah Gelar ke Tokoh (Tabel Relasi: tokoh_gelar_tokoh)
+export async function postGelarTokoh(tokohId, gelar) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/relasi/gelar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ tokoh_id: tokohId, gelar_tokoh: gelar })
+    });
+    if (!response.ok) throw new Error("Gagal menambah gelar");
+    return await response.json();
+}
+
+// --- API RELASI & DROPDOWN ---
+
+// Ambil Semua Arkeolog (Untuk Dropdown)
+export async function getArkeolog() {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/arkeolog`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.ok ? await response.json() : [];
+}
+
+// Ambil Semua Kerajaan (Untuk Dropdown)
+export async function getKerajaan() {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/kerajaan`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.ok ? await response.json() : [];
+}
+
+// Link Arkeolog ke Situs (Tabel Relasi: penelitian_situs)
+export async function postPenelitian(situsId, arkeologId) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/relasi/penelitian`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ situs_id: situsId, arkeolog_id: arkeologId })
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Gagal menghubungkan arkeolog");
+    }
+    return await response.json();
+}
+
+// Ambil Peneliti berdasarkan Situs
+export async function getPenelitiBySitus(situsId) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/relasi/penelitian/by-situs/${situsId}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    return response.ok ? await response.json() : [];
+}
+
+export async function getAllTokoh() {
+    // Endpoint ini bisa diakses publik jika kita update routes/tokoh.js
+    // Asumsi: Kita pakai token yg ada (jika login), atau coba akses public
+    // (Sebaiknya update routes/tokoh.js agar GET / bisa public, tapi pakai token dulu gpp)
+    const token = localStorage.getItem('arkeo_token');
     
-    addCity: (name) => apiRequest('/api/alamat/kota', 'POST', { nama_kota_kabupaten: name }),
-    updateCity: (id, name) => apiRequest(`/api/alamat/kota/${id}`, 'PUT', { nama_kota_kabupaten: name }),
-    deleteCity: (id) => apiRequest(`/api/alamat/kota/${id}`, 'DELETE'),
+    // Jika backend mewajibkan token, fitur ini hanya jalan kalau login.
+    // Jika ingin public, hapus 'authenticateToken' di routes/tokoh.js bagian GET /
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
 
-    addDistrict: (name, kotaId) => apiRequest('/api/alamat/kecamatan', 'POST', { nama_kecamatan: name, kota_kabupaten_id: kotaId }),
-    updateDistrict: (id, name, kotaId) => apiRequest(`/api/alamat/kecamatan/${id}`, 'PUT', { nama_kecamatan: name, kota_kabupaten_id: kotaId }),
-    deleteDistrict: (id) => apiRequest(`/api/alamat/kecamatan/${id}`, 'DELETE'),
+    try {
+        const response = await fetch(`${BASE_URL}/tokoh`, { headers });
+        return response.ok ? await response.json() : [];
+    } catch (e) { return []; }
+}
 
-    addVillage: (name, kecId) => apiRequest('/api/alamat/desa', 'POST', { nama_desa_kelurahan: name, kecamatan_id: kecId }),
-    updateVillage: (id, name, kecId) => apiRequest(`/api/alamat/desa/${id}`, 'PUT', { nama_desa_kelurahan: name, kecamatan_id: kecId }),
-    deleteVillage: (id) => apiRequest(`/api/alamat/desa/${id}`, 'DELETE'),
+export async function postKota(nama) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/alamat/kota`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ nama_kota_kabupaten: nama })
+    });
+    if (!response.ok) throw new Error("Gagal tambah kota");
+    return await response.json();
+}
 
-    getResearchersBySite: (situsId) => apiRequest(`/api/relasi/penelitian/by-situs/${situsId}`),
-    getOwnersByObject: (objekId) => apiRequest(`/api/relasi/atribusi/by-objek/${objekId}`),
-    getTitles: (tokohId) => apiRequest(`/api/relasi/gelar/by-tokoh/${tokohId}`),
+export async function postKecamatan(nama, kotaId) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/alamat/kecamatan`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ nama_kecamatan: nama, kota_kabupaten_id: kotaId })
+    });
+    if (!response.ok) throw new Error("Gagal tambah kecamatan");
+    return await response.json();
+}
 
-    addPenelitian: (arkeologId, situsId) => apiRequest('/api/relasi/penelitian', 'POST', { arkeolog_id: arkeologId, situs_id: situsId }),
-    deletePenelitian: (arkeologId, situsId) => apiRequest('/api/relasi/penelitian', 'DELETE', { arkeolog_id: arkeologId, situs_id: situsId }),
+export async function postDesa(nama, kecamatanId) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/alamat/desa`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ nama_desa_kelurahan: nama, kecamatan_id: kecamatanId })
+    });
+    if (!response.ok) throw new Error("Gagal tambah desa");
+    return await response.json();
+}
 
-    addAtribusi: (objekId, tokohId) => apiRequest('/api/relasi/atribusi', 'POST', { objek_id: objekId, tokoh_id: tokohId }),
-    deleteAtribusi: (objekId, tokohId) => apiRequest('/api/relasi/atribusi', 'DELETE', { objek_id: objekId, tokoh_id: tokohId }),
+export async function postAtribusi(objekId, tokohId) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/relasi/atribusi`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ objek_id: objekId, tokoh_id: tokohId })
+    });
+    if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.message || "Gagal menghubungkan tokoh");
+    }
+    return await response.json();
+}
 
-    addTitle: (tokohId, gelar) => apiRequest('/api/relasi/gelar', 'POST', { tokoh_id: tokohId, gelar_tokoh: gelar }),
-    deleteTitle: (tokohId, gelar) => apiRequest('/api/relasi/gelar', 'DELETE', { tokoh_id: tokohId, gelar_tokoh: gelar }),
-    
-    register: (data) => apiRequest('/api/auth/register', 'POST', data),
-    login: (data) => apiRequest('/api/auth/login', 'POST', data),
-};
+export async function getPendingObjek() {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/objek/pending`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Gagal ambil data objek pending");
+    return await response.json();
+}
+
+export async function approveObjek(id) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/objek/approve/${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Gagal approve objek");
+    return await response.json();
+}
+
+export async function rejectObjek(id) {
+    const token = localStorage.getItem('arkeo_token');
+    const response = await fetch(`${BASE_URL}/objek/reject/${id}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!response.ok) throw new Error("Gagal reject objek");
+    return await response.json();
+}
+
+export async function registerUser(data) {
+    const response = await fetch(`${BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message);
+    return result;
+}
+
+export async function forgotPassword(email) {
+    const response = await fetch(`${BASE_URL}/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+    });
+    return await response.json();
+}
+
+export async function resetPassword(token, newPassword) {
+    const response = await fetch(`${BASE_URL}/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, newPassword })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message);
+    return result;
+}

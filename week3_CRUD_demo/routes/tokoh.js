@@ -5,24 +5,24 @@ const { authenticateToken, isVerifier, isAdmin } = require('../middleware/auth')
 const validate = require('../middleware/validation');
 const { tokohSchema, paramsIdSchema } = require('../validators/tokoh.validator');
 
-router.get('/', authenticateToken, async (req, res) => {
+router.get('/', async (req, res) => {
     try {
-        const getQuery = 
-            `
+        const query = `
             SELECT t.*, k.nama_kerajaan 
             FROM tokoh t
             LEFT JOIN kerajaan k ON t.kerajaan_id = k.kerajaan_id
+            WHERE t.status_validasi = 'verified'
             ORDER BY t.nama_tokoh ASC
-            `;
-        const result = await pool.query(getQuery);
+        `;
+        const result = await pool.query(query);
         res.json(result.rows);
     } catch (error) {
-        console.error('Error ketika ambil tokoh', error);
-        res.status(500).json({message: 'Error di server'});
+        console.error(error);
+        res.status(500).json({ message: 'Error server.' });
     }
 });
 
-router.get('/:id',authenticateToken, validate({ params: paramsIdSchema }), async (req, res) => {
+router.get('/:id', validate({ params: paramsIdSchema }), async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
@@ -42,19 +42,27 @@ router.get('/:id',authenticateToken, validate({ params: paramsIdSchema }), async
     }
 });
 
-router.post('/', authenticateToken, isVerifier, validate({ body: tokohSchema }), async (req, res) => {
+router.post('/', 
+    authenticateToken, 
+    validate({ body: tokohSchema }), 
+    async (req, res) => {
     try {
         const { nama_tokoh, tahun_lahir, tahun_wafat, biografi_singkat, kerajaan_id } = req.body;
-        const result = await pool.query(
-            `INSERT INTO tokoh (nama_tokoh, tahun_lahir, tahun_wafat, biografi_singkat, kerajaan_id) 
-             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-            [nama_tokoh, tahun_lahir, tahun_wafat, biografi_singkat, kerajaan_id]
-        );
+        
+        const userRole = req.user.role;
+        const initialStatus = (userRole === 'administrator' || userRole === 'verifikator') 
+            ? 'verified' 
+            : 'pending';
 
-        res.status(201).json({message: 'Tokoh berhasil dibuat', data: result.rows[0]});
+        const result = await pool.query(
+            `INSERT INTO tokoh (nama_tokoh, tahun_lahir, tahun_wafat, biografi_singkat, kerajaan_id, status_validasi) 
+             VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+            [nama_tokoh, tahun_lahir, tahun_wafat, biografi_singkat, kerajaan_id, initialStatus]
+        );
+        res.status(201).json({ message: 'Tokoh berhasil dibuat', data: result.rows[0] });
     } catch (error) {
-        console.error('Error ketika post tokoh', error);
-        res.status(500).json({message: 'Error di server'});
+        console.error(error);
+        res.status(500).json({ message: 'Error server.' });
     }
 });
 

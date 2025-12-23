@@ -7,17 +7,14 @@ const validate = require('../middleware/validation');
 const { kerajaanSchema, paramsIdSchema } = require('../validators/kerajaan.validator');
 router.get('/', authenticateToken, async (req, res) => {
     try {
-
-        const result = await pool.query("SELECT * FROM kerajaan ORDER BY nama_kerajaan ASC");
+        const result = await pool.query(
+            "SELECT * FROM kerajaan WHERE status_validasi = 'verified' ORDER BY nama_kerajaan ASC"
+        );
         res.json(result.rows);
-
     } catch (error) {
-
-        console.error('Error saat GET Kerajaan', error);
-        res.status(500).json({message: 'Error di Server'});
-
+        console.error(error);
+        res.status(500).json({ message: 'Error server.' });
     }
-
 });
 
 router.get('/:id', authenticateToken, validate({ params: paramsIdSchema }), async (req, res) => {
@@ -34,27 +31,28 @@ router.get('/:id', authenticateToken, validate({ params: paramsIdSchema }), asyn
     }
 });
 
-router.post('/', authenticateToken, isVerifier, validate({ body: kerajaanSchema }), async (req, res) => {
+router.post('/', authenticateToken, validate({ body: kerajaanSchema }), async (req, res) => {
     try {
         const { nama_kerajaan, tahun_berdiri, tahun_runtuh, pusat_pemerintahan, deskripsi_singkat } = req.body;
+
         
+        const userRole = req.user.role; 
+        const initialStatus = (userRole === 'administrator' || userRole === 'verifikator') 
+            ? 'verified' 
+            : 'pending';
+
         const result = await pool.query(
-            `
-            INSERT INTO kerajaan
-            (nama_kerajaan, tahun_berdiri, tahun_runtuh, pusat_pemerintahan, deskripsi_singkat) 
-            VALUES ($1, $2, $3, $4, $5) 
-            RETURNING *
-            `,
-            [nama_kerajaan, tahun_berdiri, tahun_runtuh, pusat_pemerintahan, deskripsi_singkat]
-        );
+            `INSERT INTO kerajaan 
+             (nama_kerajaan, tahun_berdiri, tahun_runtuh, pusat_pemerintahan, deskripsi_singkat, status_validasi) 
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING *`,
+            [nama_kerajaan, tahun_berdiri, tahun_runtuh, pusat_pemerintahan, deskripsi_singkat, initialStatus]);
 
-        res.status(201).json({message: 'Kerajaan berhasil dibuat', data: result.rows[0]});
-    
+        res.status(201).json({ message: 'Kerajaan berhasil dibuat', data: result.rows[0] });
     } catch (error) {
-        console.error('Error saat POST Kerajaan', error);
-        res.status(500).json({message: 'Error di Server'});
+        console.error(error);
+        res.status(500).json({ message: 'Error server.' });
     }
-
 });
 
 router.put('/:id', authenticateToken, isVerifier, validate({ params: paramsIdSchema, body: kerajaanSchema }), async (req, res) => {

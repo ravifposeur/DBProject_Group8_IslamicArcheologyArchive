@@ -4,6 +4,7 @@ const rateLimit = require('express-rate-limit');
 const pool = require('../db'); 
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 
 const validate = require('../middleware/validation');
@@ -85,6 +86,64 @@ router.post('/login', async (req, res) =>{
         console.error('Error saat login:', error);
 
         res.status(500).json({message: "Terjadi error di server."});
+    }
+});
+
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+        const userResult = await pool.query("SELECT * FROM pengguna WHERE email = $1", [email]);
+
+        if (userResult.rows.length === 0) {
+            return res.json({ message: 'Jika email terdaftar, link reset akan dikirim.' });
+        }
+
+        const token = crypto.randomBytes(20).toString('hex');
+        const expires = Date.now() + 3600000; // 1 Jam dari sekarang
+
+        await pool.query(
+            "UPDATE pengguna SET reset_password_token = $1, reset_password_expires = $2 WHERE email = $3",
+            [token, expires, email]
+        );
+
+        console.log("========================================");
+        console.log(`LINK RESET PASSWORD UNTUK ${email}:`);
+        console.log(`Token: ${token}`);
+        console.log("========================================");
+
+        res.json({ message: 'Link reset password telah dikirim (Cek Console Server).' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error server.' });
+    }
+});
+
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+
+        const userResult = await pool.query(
+            "SELECT * FROM pengguna WHERE reset_password_token = $1 AND reset_password_expires > $2",
+            [token, Date.now()]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(400).json({ message: 'Token tidak valid atau sudah kedaluwarsa.' });
+        }
+
+        const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+
+        await pool.query(
+            "UPDATE pengguna SET password_hash = $1, reset_password_token = NULL, reset_password_expires = NULL WHERE pengguna_id = $2",
+            [passwordHash, userResult.rows[0].pengguna_id]
+        );
+
+        res.json({ message: 'Password berhasil diubah! Silakan login.' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error server.' });
     }
 });
 

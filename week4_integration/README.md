@@ -2,81 +2,77 @@
 
 This repository contains the client-side application for **ArkeoGIS**, a collaborative Web GIS system designed to map and manage data regarding Islamic Archeology in Java.
 
-It is built using **Vanilla JavaScript (ES6 Modules)** and connects to the Node.js Backend API to perform CRUD operations, spatial visualization, and verification workflows.
+The application is built using **Vanilla JavaScript (ES6 Modules)** for a lightweight, dependency-free frontend that connects to a RESTful API.
 
 ## Key Features
 
 ### Public Interface
-* **Interactive Web GIS:** Visualizes verified archaeological sites using **Leaflet.js**.
-* **Searchable Directories:** Dedicated pages for:
-    * **Kingdoms** (*Kerajaan*)
-    * **Historical Figures** (*Tokoh*)
-    * **Archaeologists** (*Arkeolog*)
-* **Deep Relationships:** View artifacts found at specific sites, researchers linked to excavations, and historical figures attributed to specific objects.
+* **Interactive Web GIS:** Powered by **Leaflet.js**, displaying verified sites with custom tooltips.
+* **Search & Filters:**
+    * Real-time search by Site Name, Village, Kingdom, or Historical Figure.
+    * Filter markers by Site Type (Candi, Makam, etc.) or specific Historical Figures.
+* **Responsive Side Panel:** View detailed site information, related artifacts (objects), and research teams in a slide-out panel (adapts to a bottom sheet on mobile).
+* **Landing Page & Guide:** Dedicated pages for user onboarding (`index.html` and `guide.html`).
 
 ### Contributor Tools
-* **Data Submission:** Forms to report new Sites, Artifacts (Objects), and Master Data.
-* **Cascading Location Selects:** Dynamic loading of City → District → Village for precise site location.
+* **User Authentication:** Registration, Login, and **Forgot/Reset Password** flows.
+* **Data Reporting:**
+    * **Report Sites:** Add new sites using GPS geolocation or manual map picking.
+    * **Report Artifacts:** Add objects (findings) to specific sites with physical dimensions and transliteration data.
+* **Dynamic Data Entry:** If a Kingdom, Researcher, or Historical Figure doesn't exist in the dropdown, contributors can select **"➕ Buat Baru"** to create it on the fly while reporting.
+* **Cascading Locations:** Dynamic dropdowns for Administrative Areas (City → District → Village).
 
-### Verifier & Admin Dashboard
-* **Verification Workflow:** Review "Pending" sites and artifacts. Approve to publish them to the map or Reject to discard.
-* **Master Data Management:**
-    * **Location Manager:** Add/Edit/Delete Cities, Districts, and Villages.
-    * **Title Manager:** Manage titles (*Gelar*) for historical figures.
-* **RBAC UI:** Interface elements (Edit/Delete buttons) automatically hide/show based on the logged-in user's JWT role.
+### Admin & Verifier Dashboard (`dashboard.html`)
+* **Dual Verification Workflow:**
+    * **Verify Sites:** Review pending sites. Includes logic to highlight "New Data" (e.g., if a user created a new Kingdom).
+    * **Verify Objects:** Dedicated tab to review, approve, or reject specific artifact findings.
+* **Data Management:**
+    * **Region Manager:** Add Cities, Districts, and Villages.
+    * **Entity Managers:** CRUD forms for **Kerajaan** (Kingdoms), **Arkeolog** (Researchers), and **Tokoh** (Historical Figures).
+* **Relation Linking:** Manually link Researchers to Sites or Historical Figures to Objects via the dashboard.
 
 ## Tech Stack
 
-* **HTML5:** Semantic markup for Multi-Page Application (MPA) structure.
-* **CSS3:** Custom styling without frameworks.
-    * `style.css`: Core layout and typography.
-    * `components.css`: Cards, buttons, badges, and form elements.
-    * `map.css`: Leaflet overrides and map container styling.
-* **JavaScript (ES6):** Modular architecture.
-    * `modules/api.js`: Centralized Fetch API wrapper.
-    * `modules/auth.js`: JWT handling and Role decoding.
-    * `modules/ui.js`: DOM manipulation and rendering logic.
-* **Leaflet.js:** Open-source JavaScript library for mobile-friendly interactive maps.
+* **Core:** HTML5, CSS3, JavaScript (ES6 Modules).
+* **Styling:**
+    * Native CSS Variables for theming (Primary Blue, Success Green, Warning Orange).
+    * Responsive Flexbox/Grid layouts.
+    * Backdrop filters for modern UI elements (Glassmorphism).
+* **Maps:** [Leaflet.js](https://leafletjs.com/) (v1.9.4).
 
 ## Project Structure
 
 ```text
-frontend/
+week4_integration/
 ├── assets/
 │   └── css/
-│       ├── components.css   # Reusable UI components (cards, forms)
-│       ├── map.css          # Map specific styling
-│       └── style.css        # Global layout and navigation
+│       └── style.css        # Global styles, Map, Components, and Responsive logic
 ├── modules/
-│   ├── api.js               # API Endpoints & Fetch Wrapper
-│   ├── auth.js              # Token management & Role logic
-│   ├── dashboard.js         # Logic for the Verifier Dashboard
-│   ├── main.js              # Main controller for standard pages
-│   ├── map.js               # Leaflet initialization & marker logic
-│   └── ui.js                # HTML generation (Cards, Lists, Modals)
-├── index.html               # Homepage (Map & Site List)
-├── dashboard.html           # Protected Admin/Verifier Panel
-├── login.html               # Auth: Login
-├── register.html            # Auth: Register
-├── link-atribusi.html       # Tool: Link Object <-> Figure
-├── link-penelitian.html     # Tool: Link Archaeologist <-> Site
-├── manage-lokasi.html       # Tool: Manage Cities/Districts/Villages
-├── manage-gelar.html        # Tool: Manage Titles
-├── [Entity Pages]           # arkeolog.html, kerajaan.html, tokoh.html
-└── [Form Pages]             # add-*.html, edit-*.html
+│   ├── api.js               # Centralized Fetch wrapper & Endpoint definitions
+│   ├── auth.js              # JWT Token management (Save/Get/Decode)
+│   ├── dashboard.js         # Admin logic: Verification & Master Data forms
+│   ├── main.js              # Entry point for the Map interface
+│   ├── map.js               # Leaflet initialization & marker rendering
+│   ├── panel.js             # Side-panel logic (Details, Object lists)
+│   └── ui.js                # DOM manipulation, Modals, Dynamic Dropdowns
+├── index.html               # Landing Page
+├── map.html                 # Main WebGIS Interface
+├── dashboard.html           # Admin/Verifier Control Panel
+├── guide.html               # User Manual/Documentation
+```
+
+## Configuration
+
+If you need to change the Backend API URL, modify **`modules/api.js`**:
+
+```javascript
+const BASE_URL = 'https://arkeologis-be.vercel.app/api';
+// Change this (e.g. to 'http://localhost:3000/api')
 ```
 
 ## Setup & Installation
 
 Because this project uses **ES6 Modules** (`import`/`export`), it cannot be run directly via the `file://` protocol. It must be served via a local HTTP server.
-
-### 1. Prerequisites
-Ensure your Backend API is running.
-1. Navigate to your backend directory (e.g., `week3_CRUD_demo`).
-2. Run `node index.js`.
-3. Ensure the backend is listening at `http://localhost:3000`.
-
-### 2. Run the Frontend
 
 **Option A: VS Code Live Server (Recommended)**
 1. Open the `frontend` folder in VS Code.
@@ -96,38 +92,17 @@ Then visit `http://localhost:8000`.
 npx http-server .
 ```
 
-## Configuration
-
-If you need to change the Backend API URL (e.g., if you deploy the backend to the cloud), modify **`modules/api.js`**:
-
-```javascript
-// modules/api.js
-const API_BASE = 'http://localhost:3000'; // Change this to your server URL
-```
-
 ## Usage Guide
 
-### 1. Viewing Data (Public)
-* Open `index.html` to see the map. Only **Verified** sites appear here.
-* Navigate to **Kerajaan**, **Tokoh**, or **Arkeolog** via the navbar to browse directories.
+### 1. Exploring
+* Open `map.html` to see verified sites. Click markers to open the Side Panel
 
-### 2. Authentication
-* Click **"Masuk"** (Login) in the navbar.
-* Default contributors can register via `register.html`.
-* *Note: To become a Verifier or Admin, the role must be updated directly in the database.*
+### 2. Reporting
+* Click **Login**.
+* Click the **Floating (+)** button (bottom right).
+* Click a location on the map to open the reporting modal.
 
-### 3. Verification (Verifikator Only)
-1.  Log in as a user with the `verifikator` role.
-2.  Click **"Dashboard"** in the navbar (yellow link).
-3.  You will see list of **Pending Sites** and **Pending Artifacts**.
-4.  Click **Setuju** (Approve) to verify data, or **Tolak** (Reject) to delete the submission.
-
-### 4. Managing Relations
-* **Link Research:** Go to an Archaeologist's profile or the "Edit" page to link them to a specific Site.
-* **Link Attribution:** Go to a Historical Figure's page to link them to specific Artifacts found at a site.
-
-## Contribution
-
-1.  **CSS:** Keep styles modular. Use `components.css` for reusable widgets.
-2.  **JS:** All API calls must go through `modules/api.js`. Do not use `fetch` directly in HTML files.
-3.  **Validation:** Ensure forms handle empty states and API errors gracefully (using `alert` or UI feedback).
+### 3. Verifying (Admin)
+1. Log in as a user with the `admind` or `verifikator` role.
+2. A **Dashboard** button will appear on the map page.
+3. Use the Dashboard to Approve/Reject pending submissions.

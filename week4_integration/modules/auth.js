@@ -1,24 +1,27 @@
-export function getToken() {
-    return localStorage.getItem('token');
-}
+// File: proyek_arkeologi_frontend/modules/auth.js
+
+const TOKEN_KEY = 'arkeo_token';
 
 export function saveToken(token) {
-    localStorage.setItem('token', token);
+    localStorage.setItem(TOKEN_KEY, token);
 }
 
-export function logout() {
-    localStorage.removeItem('token');
-    window.location.href = 'login.html';
+export function getToken() {
+    return localStorage.getItem(TOKEN_KEY);
+}
+
+export function removeToken() {
+    localStorage.removeItem(TOKEN_KEY);
 }
 
 export function isLoggedIn() {
-    return !!getToken();
+    return !!getToken(); 
 }
 
-export function getUserRole() {
-    const token = getToken();
-    if (!token) return null;
+// --- FUNGSI BARU: DECODE TOKEN & AMBIL ROLE ---
 
+// Fungsi helper untuk memecah kode rahasia JWT (Base64 Decode)
+function parseJwt(token) {
     try {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -26,8 +29,17 @@ export function getUserRole() {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
 
-        return JSON.parse(jsonPayload).role;
+        return JSON.parse(jsonPayload);
     } catch (e) {
         return null;
     }
+}
+
+// Fungsi utama yang akan kita panggil
+export function getUserRole() {
+    const token = getToken();
+    if (!token) return null;
+
+    const decoded = parseJwt(token);
+    return decoded ? decoded.role : null;
 }

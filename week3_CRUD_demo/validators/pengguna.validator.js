@@ -34,7 +34,26 @@ const loginSchema = Joi.object({
     })
 });
 
+const forgotSchema = Joi.object({
+    email: Joi.string().email().required().messages({
+        'string.email': 'Format email tidak valid',
+        'any.required': 'Email wajib diisi'
+    })
+});
+
+const resetSchema = Joi.object({
+    token: Joi.string().required().messages({
+        'any.required': 'Token wajib diisi'
+    }),
+    newPassword: Joi.string().min(8).required().messages({
+        'string.min': 'Password baru minimal 8 karakter',
+        'any.required': 'Password baru wajib diisi'
+    })
+});
+
 module.exports = {
     registerSchema,
-    loginSchema
+    loginSchema,
+    forgotSchema,
+    resetSchema
 };

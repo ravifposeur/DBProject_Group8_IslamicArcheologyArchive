@@ -8,11 +8,13 @@ const { arkeologSchema, paramsIdSchema } = require('../validators/arkeolog.valid
 
 router.get('/', authenticateToken, async (req, res) => {
     try {
-        const result = await pool.query("SELECT * FROM arkeolog ORDER BY nama_lengkap ASC")
+        const result = await pool.query(
+            "SELECT * FROM arkeolog WHERE status_validasi = 'verified' ORDER BY nama_lengkap ASC"
+        );
         res.json(result.rows);
     } catch (error) {
-        console.error('Error saat GET Arkeolog', error);
-        res.status(500).json({message: 'Error di Server'});
+        console.error(error);
+        res.status(500).json({ message: 'Error server.' });
     }
 });
 
@@ -30,18 +32,26 @@ router.get('/:id', authenticateToken, validate({ params: paramsIdSchema }), asyn
     }    
 });
 
-router.post('/', authenticateToken, isVerifier, validate({ body: arkeologSchema }), async (req, res) => {
+router.post('/', authenticateToken, validate({ body: arkeologSchema }), async (req, res) => {
     try {
         const { nama_lengkap, afiliasi_institusi, spesialisasi, email, nomor_telepon } = req.body;
+        
+        const userRole = req.user.role;
+        const initialStatus = (userRole === 'administrator' || userRole === 'verifikator') 
+            ? 'verified' 
+            : 'pending';
+
         const result = await pool.query(
-            `INSERT INTO arkeolog (nama_lengkap, afiliasi_institusi, spesialisasi, email, nomor_telepon) 
-             VALUES ($1, $2, $3, $4, $5) RETURNING *`,
-            [nama_lengkap, afiliasi_institusi, spesialisasi, email, nomor_telepon]
+            `INSERT INTO arkeolog (nama_lengkap, afiliasi_institusi, spesialisasi, email, nomor_telepon, status_validasi) 
+             VALUES ($1, $2, $3, $4, $5, $6) 
+             RETURNING *`,
+            [nama_lengkap, afiliasi_institusi, spesialisasi, email || null, nomor_telepon || null, initialStatus]
         );
-        res.status(201).json({message: 'Arkeolog berhasil ditambahkan', data: result.rows[0]});
+        
+        res.status(201).json({ message: 'Arkeolog berhasil ditambahkan', data: result.rows[0] });
     } catch (error) {
-        console.error('Error saat POST Arkeolog', error);
-        res.status(500).json({message: 'Error di Server'});
+        console.error(error);
+        res.status(500).json({ message: 'Error server.' });
     }
 });
 
