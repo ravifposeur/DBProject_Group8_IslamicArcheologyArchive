@@ -25,5 +25,5 @@ This database is designed to be flexible, accommodating the inherent incompleten
 ## 3. Technical Changes
 During development, we upgraded our architecture from the initial proposal to better suit the project needs:
 1.  **DBMS**: Switched from MySQL to **PostgreSQL** to utilize native `ENUM` types and better spatial data support.
-2.  **Architecture**: Moved from a monolithic structure to a **Decoupled Architecture** (REST API Backend + Modular Frontend) to allow for a more interactive map interface.
+2.  **Architecture**: Moved to a **Decoupled Architecture** (REST API Backend + Modular Frontend) to allow for a more interactive map interface.
 3.  **Security**: Implemented **JWT Authentication** and **Role-Based Access Control (RBAC)** to enforce the verification workflow.
